@@ -1,0 +1,73 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: networkd
+  namespace: kube-system
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: EnsureExists
+rules:
+- apiGroups: [""]
+  resources: ["nodes"]
+  verbs: ["get"]
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: networkd
+  namespace: kube-system
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: EnsureExists
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: networkd
+  labels:
+    kubernetes.io/cluster-service: "true"
+    addonmanager.kubernetes.io/mode: EnsureExists
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: networkd
+subjects:
+- kind: ServiceAccount
+  name: networkd
+  namespace: kube-system
+---
+kind: DaemonSet
+apiVersion: extensions/v1beta1
+metadata:
+  name: networkd
+  namespace: kube-system
+  labels:
+    k8s-app: networkd
+    addonmanager.kubernetes.io/mode: EnsureExists
+spec:
+  selector:
+    matchLabels:
+      k8s-app: networkd
+  template:
+    metadata:
+      labels:
+        k8s-app: networkd
+    spec:
+      priorityClassName: system-node-critical
+      serviceAccountName: networkd
+      terminationGracePeriodSeconds: 0
+      hostNetwork: true
+      containers:
+      - image: us.gcr.io/jinga-gke-dev/networkd-amd64:0.1
+        name: networkd
+        securityContext:
+          privileged: true
+        args:
+        - -logtostderr
+        volumeMounts:
+        - mountPath: /host/etc/cni/net.d
+          name: cni-net-dir
+      volumes:
+      - name: cni-net-dir
+        hostPath:
+          path: /etc/cni/net.d

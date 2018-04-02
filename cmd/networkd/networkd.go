@@ -13,32 +13,16 @@ import (
 	"github.com/golang/glog"
 )
 
-const (
-	cniPath           = "/host/etc/cni/net.d/10-ptp.conflist"
-	cniConfigTemplate = `
-	{
-  		"name": "gce-pod-network",
-  		"cniVersion": "0.3.1",
-  		"plugins": [
-    		{
-      			"type": "ptp",
-      			"mtu": 1460,
-      			"ipam": {
-        			"type": "host-local",
-        			"subnet": "%s",
-					"routes": [
-	  					{"dst": "0.0.0.0/0"}
-	  				]
-	  			}
-    		}
-  		]
-	}`
-)
-
 func main() {
 	nodeName, err := os.Hostname()
 	if err != nil {
 		glog.Error("failed to get node name: %v", err)
+		return
+	}
+
+	cniPath, cniConfigTemplate := os.Getenv("NETWORKD_CNI_CONFIG_PATH"), os.Getenv("NETWORKD_CNI_NETWORK_CONFIG_TEMPLATE")
+	if len(cniPath) == 0 || len(cniConfigTemplate) == 0 {
+		glog.Errorf("failed to read either env NETWORKD_CNI_CONFIG_PATH: %q or env NETWORKD_CNI_NETWORK_CONFIG_TEMPLATE: %q", cniPath, cniConfigTemplate)
 		return
 	}
 
@@ -73,17 +57,12 @@ func main() {
 	}
 }
 
-func clusterConfig(host string) *rest.Config {
+func k8sClient() (*kubernetes.Clientset, error) {
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		glog.Errorf("failed to create in-cluster config: %v", err)
-		config.Host = host
+		return nil, err
 	}
-	return config
-}
-
-func k8sClient() (*kubernetes.Clientset, error) {
-	config := clusterConfig("https://localhost:443/")
 
 	client, err := kubernetes.NewForConfig(config)
 	if err != nil {

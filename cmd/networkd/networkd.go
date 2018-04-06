@@ -29,6 +29,34 @@ import (
 	"github.com/golang/glog"
 )
 
+const (
+	defaultCNIPath           = "/etc/cni/net.d/10-k8s-ptp.conflist"
+	defaultCNIConfigTemplate = `{
+      "name": "k8s-pod-network",
+      "cniVersion": "0.3.1",
+      "plugins": [
+        {
+          "type": "ptp",
+          "mtu": 1460,
+          "ipam": {
+              "type": "host-local",
+              "subnet": "%s",
+              "routes": [
+                {"dst": "0.0.0.0/0"}
+              ]
+          }
+        },
+        {
+          "type": "portmap",
+          "capabilities": {
+            "portMappings": true
+          },
+          "noSnat": true
+        }
+      ]
+    }`
+)
+
 func main() {
 	nodeName, err := os.Hostname()
 	if err != nil {
@@ -38,8 +66,14 @@ func main() {
 
 	cniPath, cniConfigTemplate := os.Getenv("NETWORKD_CNI_CONFIG_PATH"), os.Getenv("NETWORKD_CNI_NETWORK_CONFIG_TEMPLATE")
 	if len(cniPath) == 0 || len(cniConfigTemplate) == 0 {
-		glog.Errorf("failed to read either env NETWORKD_CNI_CONFIG_PATH: %q or env NETWORKD_CNI_NETWORK_CONFIG_TEMPLATE: %q", cniPath, cniConfigTemplate)
-		return
+		glog.Warningf("failed to read either env NETWORKD_CNI_CONFIG_PATH: %q or env NETWORKD_CNI_NETWORK_CONFIG_TEMPLATE: %q", cniPath, cniConfigTemplate)
+
+		if len(cniPath) == 0 {
+			cniPath = defaultCNIPath
+		}
+		if len(cniConfigTemplate) == 0 {
+			cniConfigTemplate = defaultCNIConfigTemplate
+		}
 	}
 
 	client, err := k8sClient()
@@ -48,7 +82,6 @@ func main() {
 	}
 
 	var cidr string
-
 	for {
 		_, err := os.Stat(cniPath)
 		if err == nil || !os.IsNotExist(err) {

@@ -19,7 +19,7 @@ BIN := networkd
 PKG := github.com/jingax10/networkd
 
 # Where to push the docker image.
-REGISTRY ?= us.gcr.io/jinga-gke-dev
+REGISTRY ?= us.gcr.io/jinga-prod
 
 # Which architecture to build - see $(ALL_ARCH) for options.
 ARCH ?= amd64

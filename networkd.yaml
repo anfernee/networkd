@@ -114,7 +114,7 @@ spec:
       terminationGracePeriodSeconds: 0
       hostNetwork: true
       containers:
-      - image: us.gcr.io/jinga-gke-dev/networkd-amd64:0.1
+      - image: us.gcr.io/jinga-prod/networkd-amd64:v0.1
         name: networkd
         securityContext:
           privileged: true

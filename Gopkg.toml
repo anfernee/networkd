@@ -26,6 +26,10 @@
 
 
 [[constraint]]
+  name = "cloud.google.com/go"
+  version = "0.21.0"
+
+[[constraint]]
   branch = "master"
   name = "github.com/golang/glog"
 

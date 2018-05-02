@@ -40,11 +40,13 @@ func isK8sMaster() bool {
 		log.Fatal("not running on GCE")
 	}
 
-	if yKubeEnv, err := metadata.InstanceAttributeVaule("kube-env"); err != nil {
+	yKubeEnv, err := metadata.InstanceAttributeValue("kube-env")
+	if err != nil {
 		log.Fatal("failed to fetch kube-env: %v", err)
 	}
 
-	if jKubeEnv, err := utilyaml.ToJSON([]byte(yKubeEnv)); err != nil {
+	jKubeEnv, err := utilyaml.ToJSON([]byte(yKubeEnv))
+	if err != nil {
 		log.Fatal("failed to convert kube-env to JSON: %v", err)
 	}
 

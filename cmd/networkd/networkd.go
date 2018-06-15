@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"time"
 
@@ -37,22 +36,22 @@ import (
 
 func isK8sMaster() bool {
 	if !metadata.OnGCE() {
-		log.Fatal("not running on GCE")
+		glog.Fatal("not running on GCE")
 	}
 
 	yKubeEnv, err := metadata.InstanceAttributeValue("kube-env")
 	if err != nil {
-		log.Fatal("failed to fetch kube-env: %v", err)
+		glog.Fatalf("failed to fetch kube-env: %v", err)
 	}
 
 	jKubeEnv, err := utilyaml.ToJSON([]byte(yKubeEnv))
 	if err != nil {
-		log.Fatal("failed to convert kube-env to JSON: %v", err)
+		glog.Fatalf("failed to convert kube-env to JSON: %v", err)
 	}
 
 	var data map[string]interface{}
 	if err := json.Unmarshal(jKubeEnv, &data); err != nil {
-		log.Fatal("failed to parse kube-env: %v", err)
+		glog.Fatalf("failed to parse kube-env: %v", err)
 	}
 
 	return data["KUBERNETES_MASTER"].(string) == "true"
